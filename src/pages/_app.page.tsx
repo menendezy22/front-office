@@ -1,15 +1,22 @@
+/* eslint-disable import/no-unresolved */
 import { ChakraProvider } from '@chakra-ui/react';
 import { ContentfulLivePreviewProvider } from '@contentful/live-preview/react';
 import localFont from '@next/font/local';
+// eslint-disable-next-line import/no-unresolved
+import Login from '@src/components/Login/login';
+import { Layout } from '@src/components/templates/layout';
+// eslint-disable-next-line import/no-unresolved
+import { theme } from '@src/theme';
 import { appWithTranslation } from 'next-i18next';
 import type { AppProps } from 'next/app';
-import { useRouter } from "next/router"
+// eslint-disable-next-line import/order
+import { useRouter } from 'next/router';
 
-import { Layout } from '@src/components/templates/layout';
-import { theme } from '@src/theme';
+// eslint-disable-next-line import/no-unresolved
 
 const spaceGrotesk = localFont({
   src: [
+    // Font files
     {
       path: './utils/fonts/space-grotesk-v13-latin-300.woff',
       weight: '300',
@@ -64,26 +71,35 @@ const spaceGrotesk = localFont({
 });
 
 const App = ({ Component, pageProps }: AppProps) => {
-  const router = useRouter()
+  const router = useRouter();
+  const { pathname } = router;
+
+  console.log(pathname, 'ezzzz');
 
   return (
-    <ContentfulLivePreviewProvider
-      locale={router.locale || 'en-US'}
-      enableInspectorMode={pageProps.previewActive}
-      enableLiveUpdates={pageProps.previewActive}>
-      <ChakraProvider
-        theme={{
-          ...theme,
-          fonts: {
-            heading: `${spaceGrotesk.style.fontFamily}, ${theme.fonts.heading}`,
-            body: `${spaceGrotesk.style.fontFamily}, ${theme.fonts.body}`,
-          },
-        }}>
-        <Layout>
-          <Component {...pageProps} />
-        </Layout>
-      </ChakraProvider>
-    </ContentfulLivePreviewProvider>
+    <div>
+      <ContentfulLivePreviewProvider
+        locale={router.locale || 'en-US'}
+        enableInspectorMode={pageProps.previewActive}
+        enableLiveUpdates={pageProps.previewActive}>
+        <ChakraProvider
+          theme={{
+            ...theme,
+            fonts: {
+              heading: `${spaceGrotesk.style.fontFamily}, ${theme.fonts.heading}`,
+              body: `${spaceGrotesk.style.fontFamily}, ${theme.fonts.body}`,
+            },
+          }}>
+          {pathname === '/404' ? (
+            <Login />
+          ) : (
+            <Layout>
+              <Component {...pageProps} />
+            </Layout>
+          )}
+        </ChakraProvider>
+      </ContentfulLivePreviewProvider>
+    </div>
   );
 };
 
