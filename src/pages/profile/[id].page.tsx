@@ -9,8 +9,10 @@ import {
   useToast,
   Image,
 } from '@chakra-ui/react';
-import { updateProfile, getUserProfile } from '@src/pages/services/user'; // Update the path accordingly
+// eslint-disable-next-line import/no-unresolved
+import { updateUser, getUserProfile } from '@src/pages/services/user'; // Update the path accordingly
 import { useRouter } from 'next/router';
+import { useParams } from 'react-router-dom';
 
 const ProfilePage = () => {
   const [userData, setUserData] = useState({
@@ -20,62 +22,84 @@ const ProfilePage = () => {
     phone: '',
     email: '',
     photo: null,
-    password: '',
   });
   const [previewPhoto, setPreviewPhoto] = useState<any>(null); // Preview for uploaded photo
   const [loading, setLoading] = useState(true); // Loading state for fetching data
   const toast = useToast();
   const router = useRouter();
 
+  const { id } = router.query;
+
+  console.log(id, 'ez');
+
   // Fetch user profile data when component loads
   useEffect(() => {
     const fetchProfile = async () => {
+      setLoading(true); // Set loading to true when starting the fetch
       try {
-        const user = await getUserProfile(); // Assuming this function fetches user data
-        setUserData({
-          nom: user.nom,
-          prenom: user.prenom,
-          adresse: user.adresse,
-          phone: user.phone,
-          email: user.email,
-          photo: user.photo,
-          password: '', // Initialize password as empty
-        });
-        setPreviewPhoto(user.photo); // Set initial photo preview
-        setLoading(false);
+        if (id !== undefined) {
+          const user: any = await getUserProfile(id);
+          console.log(user, 'lele');
+
+          // Update user data
+          setUserData({
+            nom: user.user.nom,
+            prenom: user.user.prenom,
+            adresse: user.user.adresse,
+            phone: user.user.phone,
+            email: user.user.email,
+          });
+
+          // Option 1: Use the file path
+          const photoUrl = `http://localhost:5000/${user.user.photo.replace(/\\/g, '/')}`;
+          setPreviewPhoto(photoUrl); // Use the corrected URL
+
+          // Option 2: Use the base64 data if you prefer
+          // setPreviewPhoto(user.photo); // Uncomment this if using base64
+        }
       } catch (error) {
         console.log(error);
-        setLoading(false);
+      } finally {
+        setLoading(false); // Ensure loading is set to false after fetch completion
       }
     };
 
     fetchProfile();
-  }, []);
+  }, [id]);
+
+  console.log(userData, 'test');
 
   // Handle form submission to update user profile
   const handleSubmit = async e => {
     e.preventDefault();
 
-    const updatedData = {
-      nom: userData.nom,
-      prenom: userData.prenom,
-      adresse: userData.adresse,
-      phone: userData.phone,
-      email: userData.email,
-      photo: userData.photo, // Photo file if updated
-      password: userData.password, // Include password for updates
-    };
+    // Create a new FormData object
+    const formData = new FormData();
+
+    // Append user data to the FormData object
+    formData.append('nom', userData.nom);
+    formData.append('prenom', userData.prenom);
+    formData.append('adresse', userData.adresse);
+    formData.append('phone', userData.phone);
+    formData.append('email', userData.email);
+
+    // Append the photo if it exists (assuming it's a file input)
+    if (userData.photo) {
+      formData.append('photo', userData.photo); // Ensure this is a file object
+    }
 
     try {
-      await updateProfile(updatedData); // Assuming this updates the user profile
+      // Call the function to update the profile, ensure it handles the PUT request correctly
+      await updateUser(id, formData); // Assuming updateProfile takes ID and FormData
       toast({
         title: 'Profile updated successfully.',
         status: 'success',
         duration: 3000,
         isClosable: true,
       });
-      // Optionally, redirect after update
+      // Optionally, redirect after update or refresh user data
     } catch (error) {
+      console.error('Profile update error:', error); // Log error for debugging
       toast({
         title: 'Profile update failed.',
         description: 'Please try again.',
@@ -122,17 +146,16 @@ const ProfilePage = () => {
         onClick={handlePhotoClick} // Trigger file input click on circle click
       >
         <Image
-          src={previewPhoto || 'default_photo_url'} // Show preview or default image
-          alt="Profile"
+          src={previewPhoto || 'default_photo_url'}
           boxSize="full"
           objectFit="cover"
           borderRadius="full"
         />
         <Input
           type="file"
-          accept="image/*" // Only accept image files
-          onChange={handlePhotoChange} // Call the handler on change
-          display="none" // Hide the input
+          accept="image/*"
+          onChange={handlePhotoChange}
+          display="none"
           id="photo-input"
         />
       </Box>
@@ -185,17 +208,6 @@ const ProfilePage = () => {
             value={userData.email}
             onChange={e => setUserData(prev => ({ ...prev, email: e.target.value }))}
             placeholder="Enter your email"
-          />
-        </FormControl>
-        {/* Password input */}
-        <FormControl mb={4} isRequired>
-          <FormLabel htmlFor="password">Password</FormLabel>
-          <Input
-            id="password"
-            type="password"
-            value={userData.password}
-            onChange={e => setUserData(prev => ({ ...prev, password: e.target.value }))}
-            placeholder="Enter your password"
           />
         </FormControl>
 

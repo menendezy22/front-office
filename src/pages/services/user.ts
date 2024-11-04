@@ -49,3 +49,39 @@ export const signup = async userData => {
     throw error; // Re-throw the error for handling in the component
   }
 };
+
+export const getUserProfile = async (id: any) => {
+  try {
+    const res = await axios.get(`${apiUrl}/user/${id}`, {
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+        'Referrer-Policy': 'no-referrer',
+      },
+    });
+
+    const data = res.data;
+    const photoBlob = `data:${data.contentType};base64,${data.photo}`;
+
+    return {
+      user: data.user,
+      photoBlob,
+    };
+  } catch (error: any) {
+    console.error(
+      'Error fetching user profile:',
+      error.response ? error.response.data : error.message,
+    );
+    throw error;
+  }
+};
+
+export const updateUser = async (id, userData) => {
+  try {
+    const response = await axios.put(`${apiUrl}/user/user/${id}`, userData);
+    return response.data;
+  } catch (error) {
+    console.error('Error updating user:', error);
+    throw error;
+  }
+};
